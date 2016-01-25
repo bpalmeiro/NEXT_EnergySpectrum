@@ -16,40 +16,17 @@ mass = 5.81 #masa de Xe
 purity = 0.91 #pureza
 trun = 100. #dias
 
-BgrRej = 0.2
-SigEff = 0.8
+BgrRej = 1.
+SigEff = 1.
 
 
 rand = rt.TRandom3(0)
 
-Nbb2n = (round(st.estimation(mass,purity,trun)*.695197*SigEff)) #rand.Poisson
+Nbb2n = (int(round(st.estimation(mass,purity,trun)*.695197*SigEff))) #rand.Poisson
 
 texp = trun * 24 * 3600 #s
 
-elementdic = {60: 'Co60',
-            208: 'Tl208',
-            214: 'Bi214',
-            40: 'K40'}
 
-
-filedic = {0 :'ANODE_QUARTZ ',
-        1 :'CARRIER_PLATE ',
-        2 :'DICE_BOARD ',
-        3 :'ENCLOSURE_BODY ',
-        4 :'ICS ',
-        5 :'PEDESTAL ',
-        6 :'PMT_BODY ',
-        7 :'SHIELDING_STRUCT ',
-        8 :'VESSEL ',
-        9 :'BUFFER_TUBE ',
-        10 :'DB_PLUG ',
-        11 :'DRIFT_TUBE ',
-        12 :'ENCLOSURE_WINDOW ',
-        13 :'OPTICAL_PAD ',
-        14 :'PMT_BASE ',
-        15 :'SHIELDING_LEAD ',
-        16 :'SUPPORT_PLATE '
-	}
 #                               Ratio       act (mBq)
 esperado ={60: {0 :  int(round(3.935333e-2 * 0       /1000.   *texp * BgrRej)),
                 1 :  int(round(1.781900e-2 * 2.32e-1 /1000.   *texp * BgrRej)),
@@ -158,18 +135,6 @@ t.SetBranchAddress('Xf',Xf)
 t.SetBranchAddress('Yf',Yf)
 t.SetBranchAddress('Zf',Zf)
 
-h_Co = [rt.TH1F('Co_'+filedic[i],'Co_'+filedic[i],nBin,Emin,Emax) for i in filedic]
-h_K =  [rt.TH1F('K_'+filedic[i],'K_'+filedic[i],nBin,Emin,Emax) for i in filedic]
-h_Bi = [rt.TH1F('Bi_'+filedic[i],'Bi_'+filedic[i],nBin,Emin,Emax) for i in filedic]
-h_Tl = [rt.TH1F('Tl_'+filedic[i],'Tl_'+filedic[i],nBin,Emin,Emax) for i in filedic]
-h_part = [rt.TH1F('total_'+filedic[i],'total_'+filedic[i],nBin,Emin,Emax) for i in filedic]
-
-h_Co_total = rt.TH1F('Co_total','Co_total',nBin,Emin,Emax)
-h_K_total = rt.TH1F('K_total','K_total',nBin,Emin,Emax)
-h_Bi_total = rt.TH1F('Bi_total','Bi_total',nBin,Emin,Emax)
-h_Tl_total = rt.TH1F('Tl_total','Tl_total',nBin,Emin,Emax)
-h_total_Bgr = rt.TH1F('total_Brg','total_Bgr',nBin,Emin,Emax)
-h_total = rt.TH1F('total','total',nBin,Emin,Emax)
 
 
 for i in range(int(t.GetEntries())):
@@ -189,75 +154,7 @@ for i in range(int(bt.GetEntries())):
     bt.GetEntry(i)
     E2nu.append(E2nur[0])
 
-rd.shuffle(E2nu)
-E2nu = E2nu[:Nbb2n]
-
-for i in E2nu:
-    h_bb2n.Fill(i)
 
 
-
-
-
-
-for i in Epos:
-    for j in filedic:
-        rd.shuffle(Epos[i][j])
-        Epos[i][j] = Epos[i][j][:esperado[i][j]]
-        for k in range(len(Epos[i][j])):
-            if i == 40:
-                h_K[j].Fill(Epos[i][j][k])
-            if i == 60:
-                h_Co[j].Fill(Epos[i][j][k])
-            if i == 214:
-                h_Bi[j].Fill(Epos[i][j][k])
-            if i == 208:
-                h_Tl[j].Fill(Epos[i][j][k])
-
-for j in filedic:
-    h_part[j].Add(h_K[j])
-    h_part[j].Add(h_Co[j])
-    h_part[j].Add(h_Bi[j])
-    h_part[j].Add(h_Tl[j])
-
-map(lambda h: h_Co_total.Add(h),h_Co)
-map(lambda h: h_K_total.Add(h),h_K)
-map(lambda h: h_Bi_total.Add(h),h_Bi)
-map(lambda h: h_Tl_total.Add(h),h_Tl)
-h_Co += [h_Co_total]
-h_K += [h_K_total]
-h_Bi += [h_Bi_total]
-h_Tl += [h_Tl_total]
-map(lambda h: h_total_Bgr.Add(h),h_part)
-h_total.Add(h_total_Bgr)
-h_total.Add(h_bb2n)
-
-
-
-hlist = h_Co+h_K+h_Bi+h_Tl+h_part+[h_total,h_bb2n, h_total_Bgr]
-
-a = []
-
-hlist_G = map(h_Gauss,hlist)
-
-for h in hlist_G:
-    a += [h.Clone(h.GetName()+'rebin').Rebin(4)]
-hlist += a
-
-
-of = rt.TFile("Poisson_100_80_80.root","RECREATE")
-t = rt.TTree('t','tree')
-E = array('f',[0.])
-t.Branch('E',E,'E')
-
-for i in Epos:
-    for j in filedic:
-        for En in Epos[i][j]:
-            E[0] = En
-            t.Fill()
-
-map(lambda h: h.SetDirectory(of),hlist+hlist_G)
-of.Write()
-of.Close()
-ff.Close()
-bb2nfile.Close()
+for i in range(1):
+    a = FitFit(Epos,E2nu,"Train_10000.root",esperado,Nbb2n,bin=125)

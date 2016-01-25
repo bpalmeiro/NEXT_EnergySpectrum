@@ -14,7 +14,7 @@ Emax = 3.
 
 mass = 5.81 #masa de Xe
 purity = 0.91 #pureza
-trun = 197.3 #dias
+trun = 100. #dias
 
 
 Nbb2n = int(st.estimation(mass,purity,trun)*.695197)

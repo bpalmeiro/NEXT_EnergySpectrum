@@ -66,6 +66,25 @@ partdic = { 0 :'ANODE_QUARTZ ',
            16 :'SUPPORT_PLATE '
 	}
 
+partdic = { 0 :'ANODE_QUARTZ ',
+            1 :'BUFFER_TUBE ',
+            2 :'CARRIER_PLATE ',
+            3 :'DB_PLUG ',
+            4 :'DICE_BOARD ',
+            5 :'DRIFT_TUBE ',
+            6 :'ENCLOSURE_BODY ',
+            7 :'ENCLOSURE_WINDOW ',
+            8 :'ICS ',
+            9 :'OPTICAL_PAD ',
+           10 :'PEDESTAL ',
+           11 :'PMT_BASE ',
+           12 :'PMT_BODY ',
+           13 :'SHIELDING_LEAD ',
+           14 :'SHIELDING_STRUCT ',
+           15 :'SUPPORT_PLATE ',
+           16 :'VESSEL '
+    
+    }
 
 # Expected number of events
 expected = { element : { part : {} for part in partdic } for element in elementdic }
@@ -152,22 +171,14 @@ map( h_bkg.Add, h_elem.values() )
 h_total.Add( h_bkg )
 h_total.Add( h_bb2n )
 
+# Bunch of original histograms
+h0 = [ h_total, h_bkg, h_bb2n ] + h_elem.values() + h_part.values() + reduce( concat, map( dict.values, histos.values() ) )
 
 # Create gaussianly smeared histograms
-h_gaus = { i : { j : h_Gauss(h) for j,h in d.items() } for i,d in histos.items() }
-h_part_gaus = { j : h_Gauss(h) for j,h in h_part.items() }
-h_elem_gaus = { i : h_Gauss(h) for i,h in h_elem.items() }
-h_bb2n_gaus  = h_Gauss( h_bb2n )
-h_bkg_gaus   = h_Gauss( h_bkg )
-h_total_gaus = h_Gauss( h_total )
+h_gaus = map( h_Gauss, h0 )
 
 # Same histograms rebined
-h_rebin = { i : { j : h.Clone( h.GetName() + 'rebin' ).Rebin(4) for j,h in d.items() } for i,d in h_gaus.items() }
-h_part_rebin  = { j : h.Clone( h.GetName() + 'rebin' ).Rebin(4) for j,h in h_part.items() }
-h_elem_rebin  = { i : h.Clone( h.GetName() + 'rebin' ).Rebin(4) for i,h in h_elem.items() }
-h_bb2n_rebin  = h_bb2n.Clone( h_bb2n.GetName() + 'rebin' ).Rebin(4)
-h_bkg_rebin   = h_bkg.Clone( h_bkg.GetName() + 'rebin' ).Rebin(4)
-h_total_rebin = h_total.Clone( h_total.GetName() + 'rebin' ).Rebin(4)
+h_rebin = map( lambda h: h.Clone( h.GetName() + '_rebin' ).Rebin(4), h_gaus )
 
 of = rt.TFile(outputfile,'recreate')
 t = rt.TTree('t','tree')
@@ -180,23 +191,8 @@ for i,el in Epos.items():
             E[0] = En
             t.Fill()
 
-for i in elementdic:
-    for j in partdic:
-        histos[i][j].SetDirectory(of)
-        h_gaus[i][j].SetDirectory(of)
-        h_rebin[i][j].SetDirectory(of)
-    h_elem[i].SetDirectory(of)
-
-map( lambda h: h.SetDirectory(of),
-    reduce( concat, map( dict.values, histos.values() ) ) +
-    reduce( concat, map( dict.values, h_gaus.values() ) ) +
-    reduce( concat, map( dict.values, h_rebin.values() ) ) +
-    h_part.values() + h_elem.values() +
-    h_part_gaus.values() + h_elem_gaus.values() +
-    h_part_rebin.values() + h_elem_rebin.values() +
-    [h_bkg,h_bb2n,h_total] +
-    [h_bkg_gaus,h_bb2n_gaus,h_total_gaus] +
-    [h_bkg_rebin,h_bb2n_rebin,h_total_rebin] )
+### Save to file
+map( lambda h: h.SetDirectory(of), h0 + h_gaus + h_rebin )
 
 of.Write()
 of.Close()
@@ -206,4 +202,4 @@ bb2nfile.Close()
 
 for i in elementdic:
     for j in partdic:
-        print i,j,partdic[j],len(Epos[i][j])
+        print i,j,partdic[j],len(Epos[i][j]),expected[i][j]

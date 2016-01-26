@@ -16,13 +16,13 @@ mass = 5.81 #masa de Xe
 purity = 0.91 #pureza
 trun = 100. #dias
 
-BgrRej = 0.2
-SigEff = 0.8
+BgrRej = 1.
+SigEff = 1.
 
 
 rand = rt.TRandom3(0)
 
-Nbb2n = (round(st.estimation(mass,purity,trun)*.695197*SigEff)) #rand.Poisson
+Nbb2n = int(round(st.estimation(mass,purity,trun)*.695197*SigEff)) #rand.Poisson
 
 texp = trun * 24 * 3600 #s
 
@@ -33,22 +33,23 @@ elementdic = {60: 'Co60',
 
 
 filedic = {0 :'ANODE_QUARTZ ',
-        1 :'CARRIER_PLATE ',
-        2 :'DICE_BOARD ',
-        3 :'ENCLOSURE_BODY ',
-        4 :'ICS ',
-        5 :'PEDESTAL ',
-        6 :'PMT_BODY ',
-        7 :'SHIELDING_STRUCT ',
-        8 :'VESSEL ',
-        9 :'BUFFER_TUBE ',
-        10 :'DB_PLUG ',
-        11 :'DRIFT_TUBE ',
-        12 :'ENCLOSURE_WINDOW ',
-        13 :'OPTICAL_PAD ',
-        14 :'PMT_BASE ',
-        15 :'SHIELDING_LEAD ',
-        16 :'SUPPORT_PLATE '
+        1  :'BUFFER_TUBE ',
+        2  :'CARRIER_PLATE ',
+        3  :'DB_PLUG ',
+        4  :'DICE_BOARD ',
+        5  :'DRIFT_TUBE ',
+        6  :'ENCLOSURE_BODY ',
+        7  :'ENCLOSURE_WINDOW ',
+        8  :'ICS ',
+        9  :'OPTICAL_PAD ',
+        10 :'PEDESTAL ',
+        11 :'PMT_BASE ',
+        12 :'PMT_BODY ',
+        13 :'SHIELDING_LEAD ',
+        14 :'SHIELDING_STRUCT ',
+        15 :'SUPPORT_PLATE ',
+        16 :'VESSEL '
+
 	}
 #                               Ratio       act (mBq)
 esperado ={60: {0 :  int(round(3.935333e-2 * 0       /1000.   *texp * BgrRej)),
@@ -245,7 +246,7 @@ for h in hlist_G:
 hlist += a
 
 
-of = rt.TFile("Poisson_100_80_80.root","RECREATE")
+of = rt.TFile("Poissonizado_100.root","RECREATE")
 t = rt.TTree('t','tree')
 E = array('f',[0.])
 t.Branch('E',E,'E')

@@ -13,7 +13,7 @@ poissonize = False
 DataInfoFilename = 'DataInfo.dat'
 BBFile = 'bb2nu.root'
 BkgFile = 'BgrClass.root'
-outputfile = 'Poisson_100_80_80.root'
+outputfile = 'TrainSet.root'
 
 rt.gStyle.SetOptStat(1111);
 rt.gStyle.SetOptFit(1111111);
@@ -25,10 +25,10 @@ Emax = 3.
 
 mass = 5.81   # Xe mass in kg
 purity = 0.91 # Ratio of 136Xe
-trun = 100.   # Data taking time in days
+trun = 815. # Data taking time in days
 
-BgrRej = 0.2 # Background rejection factor
-SigEff = 0.8 # Signal efficiency factor
+BgrRej = 1.0#0.2 # Background rejection factor
+SigEff = 1.0#0.8 # Signal efficiency factor
 
 rand = rt.TRandom3(0)
 
@@ -200,6 +200,7 @@ ff.Close()
 bb2nfile.Close()
 
 
-for i in elementdic:
-    for j in partdic:
-        print i,j,partdic[j],len(Epos[i][j]),expected[i][j]
+for i,el in elementdic.items():
+    for j,pt in partdic.items():
+        if len(Epos[i][j]) != expected[i][j]:
+            print 'For element {0} in part {1}, {2} events expected, got {3} instead, {4}%'.format(el,pt,expected[i][j],len(Epos[i][j]), len(Epos[i][j])*100./expected[i][j])

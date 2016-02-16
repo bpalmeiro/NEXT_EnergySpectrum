@@ -14,7 +14,7 @@ Emax = 3.
 
 mass = 5.81 #masa de Xe
 purity = 0.91 #pureza
-trun = 100. #dias
+trun = 800. #dias
 
 BgrRej = 1.
 SigEff = 1.
@@ -246,7 +246,7 @@ for h in hlist_G:
 hlist += a
 
 
-of = rt.TFile("Poissonizado_100.root","RECREATE")
+of = rt.TFile("Train_800.root","RECREATE")
 t = rt.TTree('t','tree')
 E = array('f',[0.])
 t.Branch('E',E,'E')

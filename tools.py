@@ -11,22 +11,23 @@ elementdic = {60: 'Co60',
 
 
 filedic = {0 :'ANODE_QUARTZ ',
-        1 :'CARRIER_PLATE ',
-        2 :'DICE_BOARD ',
-        3 :'ENCLOSURE_BODY ',
-        4 :'ICS ',
-        5 :'PEDESTAL ',
-        6 :'PMT_BODY ',
-        7 :'SHIELDING_STRUCT ',
-        8 :'VESSEL ',
-        9 :'BUFFER_TUBE ',
-        10 :'DB_PLUG ',
-        11 :'DRIFT_TUBE ',
-        12 :'ENCLOSURE_WINDOW ',
-        13 :'OPTICAL_PAD ',
-        14 :'PMT_BASE ',
-        15 :'SHIELDING_LEAD ',
-        16 :'SUPPORT_PLATE '
+        1  :'BUFFER_TUBE ',
+        2  :'CARRIER_PLATE ',
+        3  :'DB_PLUG ',
+        4  :'DICE_BOARD ',
+        5  :'DRIFT_TUBE ',
+        6  :'ENCLOSURE_BODY ',
+        7  :'ENCLOSURE_WINDOW ',
+        8  :'ICS ',
+        9  :'OPTICAL_PAD ',
+        10 :'PEDESTAL ',
+        11 :'PMT_BASE ',
+        12 :'PMT_BODY ',
+        13 :'SHIELDING_LEAD ',
+        14 :'SHIELDING_STRUCT ',
+        15 :'SUPPORT_PLATE ',
+        16 :'VESSEL '
+
 	}
 
 
@@ -109,7 +110,7 @@ def CloneHist(hist,name = 'clone',nbin = None):
 
 
 
-def h_Gauss(hist):
+def h_Gauss(hist,sigma = -1):
     nbin = hist.GetNbinsX()
 
     hnew = CloneHist(hist,'Gauss')
@@ -118,42 +119,59 @@ def h_Gauss(hist):
         Caux = hist.GetXaxis().GetBinCenter(i)
         naux = hist.GetBinContent(i)
         for j in range(int(naux)):
-            hnew.Fill(Gaussianizator(Caux))
+            hnew.Fill(Gaussianizator(Caux,sigma))
     return hnew
 
 
 
 
 
-def GetFitHist(Epos,E2nu,esperado,Nbb2n,minE = 0.,maxE = 3.,bin = 100):
+def GetFitHist(Epos,E2nu,esperado,Nbb2n,minE = 0.,maxE = 3.,bin = 500):
     rand = TRandom(0)
-    h_Etot = TH1F('h_Etot','h_Etot',bin,minE,maxE)
-    h_bb2n = TH1F('h_bb2n','h_bb2n',bin,minE,maxE)
-    n = {60: 0, 208: 0, 214: 0, 40: 0, 'bb': 0}
-
+    h_Etot = TH1F('h_Etot','h_Etot',500,minE,maxE)
+    h_bb2n = TH1F('h_bb2n','h_bb2n',500,minE,maxE)
+    n = {}
     for i in Epos:
-        for j in filedic:
-            rd.shuffle(Epos[i][j])
-            for k in Epos[i][j][:(esperado[i][j])]: #rand.Poisson
+        n[i] = {}
+        n[i]['real'] = 0
+        n[i]['pois'] = 0
 
-                n[i] += 1
-                h_Etot.Fill(k)
+    nn = 1
+    for tt in range(nn):
 
-            print j, ' : ', esperado[i][j], '  ', len(Epos[i][j])
-            print n[i]
-    rd.shuffle(E2nu)
-    for i in E2nu[:rand.Poisson(Nbb2n)]:
-        n['bb'] += 1
-        h_Etot.Fill(i)
-        h_bb2n.Fill(i)
-    raw_input()
-    return h_Etot,h_bb2n,n
+        for i in Epos:
+            for j in filedic:
+                rd.shuffle(Epos[i][j])
+                n[i]['real'] += esperado[i][j]
+
+                for k in Epos[i][j][:(esperado[i][j])]: #rand.Poisson
+                    #if k >1.5 and k<2.7:
+                        n[i]['pois'] += 1
+                        h_Etot.Fill(k)
+
+                #print j, ' : ', esperado[i][j], '  ', len(Epos[i][j])
+                #print n[i]
+
+        rd.shuffle(E2nu)
+        n['bb'] = {}
+        n['bb']['real'] = Nbb2n
+        n['bb']['pois'] = 0
+        for i in E2nu[:rand.Poisson(Nbb2n)]:
+            n['bb']['pois'] += 1
+            h_Etot.Fill(i)
+            h_bb2n.Fill(i)
+        #print tt
+
+    #h_Etot.Scale(1./nn)
+    #h_bb2n.Scale(1./nn)
+
+    return h_Gauss(h_Etot).Rebin(4),h_Gauss(h_bb2n).Rebin(4),n
 
 
 
 def FitFit(Epos,E2nu,trainfile,esperado,Nbb2n,minE = 0.,maxE = 3.,bin = 100):
 
-    E = RooRealVar("E","E",0.5,3.0)#
+    E = RooRealVar("E","E",0.5,3.)#
     Ea = RooArgList(E)
     Eap = RooArgSet(E)
 
@@ -165,13 +183,17 @@ def FitFit(Epos,E2nu,trainfile,esperado,Nbb2n,minE = 0.,maxE = 3.,bin = 100):
     h_BiL    = ff.Get('Bi_total_Gaussrebin')
     h_bb2nL  = ff.Get('bb2nu_Gaussrebin')
 
-
     h_totalL,h_testnnL,n = GetFitHist(Epos,E2nu,esperado,Nbb2n,minE,maxE,bin)
-    ntot = 0
-    for i in n:
-        ntot += n[i]
 
-    n['tot'] = ntot
+    ntotr = 0
+    ntot = 0
+
+    for i in n:
+        ntotr += n[i]['real']
+        ntot += n[i]['pois']
+    n['tot'] = {}
+    n['tot']['real'] = ntotr
+    n['tot']['pois'] = ntot
 
     h_Co    = RooDataHist("h_Co","h_Co Gauss",Ea,h_CoL)
     h_K     = RooDataHist("h_K","h_K Gauss",Ea,h_KL)
@@ -188,15 +210,17 @@ def FitFit(Epos,E2nu,trainfile,esperado,Nbb2n,minE = 0.,maxE = 3.,bin = 100):
     pdf_bb2n = RooHistPdf("pdf_bb2nu","pdf_bb2n Gauss",Eap,h_bb2n)
 
 
-    n_Co   = RooRealVar("n_Co","n_Co",0,0,ntot)
-    n_K    = RooRealVar("n_K","n_K",0,0,ntot)
-    n_Tl   = RooRealVar("n_Tl","n_Tl",0,0,ntot)
-    n_Bi   = RooRealVar("n_Bi","n_Bi",0,0,ntot)
-    n_bb2n = RooRealVar("n_bb2nu","n_bb2ny",ntot,0,ntot)
+    n_Co   = RooRealVar("n_Co","n_Co",0.0001,0.,ntot)
+    n_K    = RooRealVar("n_K","n_K",0.0001,0.,ntot)
+    n_Tl   = RooRealVar("n_Tl","n_Tl",0.0001,0.,ntot)
+    n_Bi   = RooRealVar("n_Bi","n_Bi",0.0001,0.,ntot)
+    n_bb2n = RooRealVar("n_bb2nu","n_bb2ny",n['bb']['real'],0,1000000)
 
 
     model = RooAddPdf('model','model',RooArgList(pdf_Co,pdf_K,pdf_Tl,pdf_Bi,pdf_bb2n),RooArgList(n_Co,n_K,n_Tl,n_Bi,n_bb2n))
-    fit = model.fitTo(h_total)
+    #model = RooAddPdf('model','model',RooArgList(pdf_K,pdf_Tl,pdf_Bi,pdf_bb2n),RooArgList(n_K,n_Tl,n_Bi,n_bb2n))
+
+    fit = model.fitTo(h_total,RooFit.Extended()) #l,RooFit.Extended()
 
     frame = E.frame(RooFit.Title(""))
     h_total.plotOn(frame)
@@ -209,7 +233,8 @@ def FitFit(Epos,E2nu,trainfile,esperado,Nbb2n,minE = 0.,maxE = 3.,bin = 100):
     model.plotOn(frame,RooFit.Components("pdf_bb2nu"),RooFit.LineColor(12),RooFit.LineStyle(1))
 
     #frame.SetLogy
-    frame.Draw()
+    #frame.Draw()
+
     '''
     h_Co.plotOn(frame)
     h_K.plotOn(frame)
@@ -220,6 +245,27 @@ def FitFit(Epos,E2nu,trainfile,esperado,Nbb2n,minE = 0.,maxE = 3.,bin = 100):
 
     h_testnn.plotOn(frame)
     frame.Draw()
-    print esperado
-    print n
+    #print esperado
+    #print n
     raw_input()
+    nfit = {}
+    nfit[40]  = {'val':n_K.getVal(),'err': n_K.getError() }
+    nfit[60]  = {'val':n_Co.getVal(),'err': n_Co.getError() }
+    nfit[208] = {'val':n_Tl.getVal(),'err': n_Tl.getError() }
+    nfit[214] = {'val':n_Bi.getVal(),'err': n_Bi.getError() }
+    nfit['bb'] = {'val':n_bb2n.getVal(), 'err': n_bb2n.getError()}
+    #raw_input('cac')
+    return n,nfit
+
+def GetPullVars(n,nfit):
+    pulldata = {}
+
+    #error = {}
+    for i in nfit:
+        pulldata[i] = {}
+        pulldata[i]['pull'] = (n[i]['pois']-nfit[i]['val'])/nfit[i]['err']
+        pulldata[i]['val'] = nfit[i]['val']
+        pulldata[i]['err'] = nfit[i]['err']
+        #error[i] =
+
+    return pulldata#,error

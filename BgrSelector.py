@@ -13,7 +13,7 @@ poissonize = False
 DataInfoFilename = 'DataInfo.dat'
 BBFile = 'bb2nu.root'
 BkgFile = 'BgrClass.root'
-outputfile = 'TrainSet.root'
+outputfile = 'TrainSet_800days.root'
 
 rt.gStyle.SetOptStat(1111);
 rt.gStyle.SetOptFit(1111111);
@@ -25,7 +25,7 @@ Emax = 3.
 
 mass = 5.81   # Xe mass in kg
 purity = 0.91 # Ratio of 136Xe
-trun = 815. # Data taking time in days
+trun = 800. # Data taking time in days
 
 BgrRej = 1.0#0.2 # Background rejection factor
 SigEff = 1.0#0.8 # Signal efficiency factor
@@ -83,7 +83,7 @@ partdic = { 0 :'ANODE_QUARTZ ',
            14 :'SHIELDING_STRUCT ',
            15 :'SUPPORT_PLATE ',
            16 :'VESSEL '
-    
+
     }
 
 # Expected number of events

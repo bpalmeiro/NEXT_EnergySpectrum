@@ -12,7 +12,7 @@ from estimation import estimation
 ### Job parameters
 #################################
 poissonize = False
-DataInfoFilename = 'DataInfo.dat'
+DataInfoFilename = 'DataInfo_v5.dat'
 BBFile = 'bb2nu.root'
 BkgFile = 'BgrClass.root'
 outputfile = 'TrainSet_800days.root'

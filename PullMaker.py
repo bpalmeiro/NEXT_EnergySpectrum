@@ -22,7 +22,7 @@ SigEff = 1.
 
 rand = rt.TRandom3(0)
 
-Nbb2n = (int(round(st.estimation(mass,purity,trun)*.695197*SigEff))) #rand.Poisson
+Nbb2n = rand.Poisson((round(st.estimation(mass,purity,trun)*.695197*SigEff))) #
 
 texp = trun * 24 * 3600 #s
 
@@ -110,7 +110,7 @@ Epos = {60 : {}, 40 : {} , 214 : {} , 208: {} }
 for i in Epos:
     for j in filedic:
         Epos[i][j] = []
-        #esperado[i][j] = rand.Poisson(esperado[i][j])
+        esperado[i][j] = rand.Poisson(esperado[i][j])
 
 
 
@@ -154,7 +154,39 @@ for i in range(int(bt.GetEntries())):
     bt.GetEntry(i)
     E2nu.append(E2nur[0])
 
+Co_Pull = rt.TH1F('Co_Pull','Co_Pull',100,-5,5)
+K_Pull = rt.TH1F('K_Pull','K_Pull',100,-5,5)
+Tl_Pull = rt.TH1F('Tl_Pull','Tl_Pull',100,-5,5)
+Bi_Pull = rt.TH1F('Bi_Pull','Bi_Pull',100,-5,5)
+bb_Pull = rt.TH1F('bb_Pull','bb_Pull',100,-5,5)
+
+Co_Sigma = rt.TH1F('Co_Sigma','Co_Sigma',100,0,100)
+K_Sigma = rt.TH1F('K_Sigma','K_Sigma',100,0,100)
+Tl_Sigma = rt.TH1F('Tl_Sigma','Tl_Sigma',100,0,100)
+Bi_Sigma = rt.TH1F('Bi_Sigma','Bi_Sigma',100,0,100)
+bb_Sigma = rt.TH1F('bb_Sigma','bb_Sigma',100,0,100)
 
 
-for i in range(1):
-    a = FitFit(Epos,E2nu,"Train_10000.root",esperado,Nbb2n,bin=125)
+h_list_Pull = {40: K_Pull, 214: Bi_Pull, 208: Tl_Pull, 'bb': bb_Pull} #60: Co_Pull,
+h_list_Sigma = {40: K_Sigma, 214: Bi_Sigma, 208: Tl_Sigma, 'bb': bb_Sigma} #60: Co_Sigma,
+
+f = open('DatosPull_Pois.txt', 'a')
+
+for i in range(200):
+    n,nfit = FitFit(Epos,E2nu,"Train_800.root",esperado,Nbb2n,bin=125)
+    pulldata = GetPullVars(n,nfit)
+    f.write(str(pulldata)+'\n')
+
+    for j in h_list_Pull:
+        h_list_Pull[j].Fill(pulldata[j]['pull'])
+
+        #h_list_Sigma[j].Fill(sigma[j])
+
+    print 'holita:  ',i,n
+f.close()
+c = rt.TCanvas()
+c.Divide(2,1)
+c.cd(1)
+h_list_Pull['bb'].Draw()
+c.cd(2)
+h_list_Pull[40].Draw()

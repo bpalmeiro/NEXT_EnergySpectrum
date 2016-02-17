@@ -5,12 +5,12 @@ import ROOT as rt
 rt.gStyle.SetOptStat(1111)
 rt.gStyle.SetOptFit(1111111)
 
-E = rt.RooRealVar("E","E",0.4,3.0)#
+E = rt.RooRealVar("E","E",0.5,3.)#
 
 Ea = rt.RooArgList(E)
 Eap = rt.RooArgSet(E)
 
-ff = rt.TFile("Train_10000.root","READONLY")
+ff = rt.TFile("Train_800.root","READONLY")
 
 h_CoL    = ff.Get('Co_total_Gaussrebin')
 h_KL     = ff.Get('K_total_Gaussrebin')
@@ -45,11 +45,11 @@ pdf_Bi   = rt.RooHistPdf("pdf_Bi","pdf_Bi Gauss",rt.RooArgSet(E),h_Bi)
 pdf_bb2n = rt.RooHistPdf("pdf_bb2nu","pdf_bb2n Gauss",rt.RooArgSet(E),h_bb2n)
 
 
-n_Co   = rt.RooRealVar("n_Co","n_Co",3724,0,1000000)
-n_K    = rt.RooRealVar("n_K","n_K",1746,0,1000000)
-n_Tl   = rt.RooRealVar("n_Tl","n_Tl",383,0,1000000)
-n_Bi   = rt.RooRealVar("n_Bi","n_Bi",956,0,1000000)
-n_bb2n = rt.RooRealVar("n_bb2nu","n_bb2ny",1142,0,1000000)
+n_Co   = rt.RooRealVar("n_Co","n_Co",0,0,1000000)
+n_K    = rt.RooRealVar("n_K","n_K",0,0,1000000)
+n_Tl   = rt.RooRealVar("n_Tl","n_Tl",0,0,1000000)
+n_Bi   = rt.RooRealVar("n_Bi","n_Bi",0,0,1000000)
+n_bb2n = rt.RooRealVar("n_bb2nu","n_bb2ny",1000000,0,1000000)
 
 
 model = rt.RooAddPdf('model','model',rt.RooArgList(pdf_Co,pdf_K,pdf_Tl,pdf_Bi,pdf_bb2n),rt.RooArgList(n_Co,n_K,n_Tl,n_Bi,n_bb2n))
@@ -59,7 +59,7 @@ model = rt.RooAddPdf('model','model',rt.RooArgList(pdf_Co,pdf_K,pdf_Tl,pdf_Bi,pd
 
 mean = rt.RooRealVar('mean','mean',-20,20)
 #model = rt.RooExponential('asdas','asdasd',E,mean)
-fit = model.fitTo(h_total)
+fit = model.fitTo(h_total,rt.RooFit.Save(),rt.RooFit.Extended())
 
 frame = E.frame(rt.RooFit.Title(""))
 
